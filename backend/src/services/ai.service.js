@@ -1,0 +1,170 @@
+import {GoogleGenAI } from "@google/genai";
+import config from "../config/config.js"
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
+import puppeteer from "puppeteer"
+
+const ai = new GoogleGenAI({
+    apiKey: config.GOOGLE_GENAI_API_KEY
+})
+
+const interviewReportSchema = z.object({
+  matchScore: z.number().describe("Score between 0 and 100 representing how well the candidate matches the job role"),
+  technicalQuestions: z.array(
+    z.object({
+      question: z.string().describe("A technical question that may be asked in the interview"),
+      intention: z.string().describe("Purpose behind asking this technical question"),
+      answer: z.string().describe("Suggested way to answer this question with key points")
+    })
+  ).describe("List of technical interview questions with intent and answers"),
+  behavioralQuestions: z.array(
+    z.object({
+      question: z.string().describe("A behavioral question that may be asked in the interview"),
+      intention: z.string().describe("Purpose behind asking this behavioral question"),
+      answer: z.string().describe("Suggested way to answer this question with key points")
+    })
+  ).describe("List of behavioral interview questions with intent and answers"),
+  skillGaps: z.array(
+    z.object({
+      skill: z.string().describe("Skill that the candidate is lacking"),
+      severity: z.enum(["low", "medium", "high"]).describe("Severity level of the skill gap")
+    })
+  ).describe("Identified skill gaps in the candidate profile"),
+  preparationPlans: z.array(
+    z.object({
+      day: z.number().describe("Day number in the preparation schedule"),
+      focus: z.string().describe("Main focus area for the day"),
+      tasks: z.array(z.string().describe("Tasks to complete on this day"))
+    })
+  ).describe("Day-wise preparation plan for interview readiness"),
+  title: z.string().describe("The title of the job for which the interview report is generated"),
+});
+
+
+export async function generateInterviewReport({ resume, selfDescription, jobDescription }) {
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: `
+Analyze the candidate and generate interview report.
+
+Resume: ${resume}
+Self Description: ${selfDescription}
+Job Description: ${jobDescription}
+
+Return ONLY JSON. No text.
+
+{
+  "title": "",
+  "matchScore": number,
+  "technicalQuestions": [
+    {
+      "question": "",
+      "intention": "",
+      "answer": ""
+    }
+  ],
+  "behavioralQuestions": [
+    {
+      "question": "",
+      "intention": "",
+      "answer": ""
+    }
+  ],
+  "skillGaps": [
+    {
+      "skill": "",
+      "severity": "low | medium | high"
+    }
+  ],
+  "preparationPlans": [
+    {
+      "day": number,
+      "focus": "",
+      "tasks": []
+    }
+  ]
+}
+`
+  });
+
+  const text = response.candidates[0].content.parts[0].text;
+  console.log("RAW AI TEXT:", text);
+
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+
+  if (!jsonMatch) {
+    console.log("No JSON found in response");
+    return {
+      title: "Untitled Position",
+      technicalQuestions: [],
+      behavioralQuestions: [],
+      skillGaps: [],
+      preparationPlans: []
+    };
+  }
+
+  try {
+    return JSON.parse(jsonMatch[0]);
+  } catch (err) {
+    console.log("JSON parse error:", err);
+    return {
+      title: "Untitled Position",
+      technicalQuestions: [],
+      behavioralQuestions: [],
+      skillGaps: [],
+      preparationPlans: []
+    };
+  }
+}
+
+export async function generatePdfFromHtml(htmlContent) {
+    const browser = await puppeteer.launch()
+    const page = await browser.newPage();
+    await page.setContent(htmlContent, { waitUntil: "networkidle0" })
+
+    const pdfBuffer = await page.pdf({
+        format: "A4",
+        margin: {
+            top: "20mm",
+            bottom: "20mm",
+            left: "15mm",
+            right: "15mm"
+        }
+    })
+
+    await browser.close()
+    return pdfBuffer
+}
+
+export async function generateResumePdf({ resume, selfDescription, jobDescription }) {
+
+    const resumePdfSchema = z.object({
+        html: z.string().describe("The HTML content of the resume which can be converted to PDF using any library like puppeteer")
+    })
+
+    const prompt = `Generate resume for a candidate with the following details:
+                        Resume: ${resume}
+                        Self Description: ${selfDescription}
+                        Job Description: ${jobDescription}
+
+                        the response should be a JSON object with a single field "html" which contains the HTML content of the resume which can be converted to PDF using any library like puppeteer.
+                        The resume should be tailored for the given job description and should highlight the candidate's strengths and relevant experience. The HTML content should be well-formatted and structured, making it easy to read and visually appealing.
+                        The content of resume should be not sound like it's generated by AI and should be as close as possible to a real human-written resume.
+                        you can highlight the content using some colors or different font styles but the overall design should be simple and professional.
+                        The content should be ATS friendly, i.e. it should be easily parsable by ATS systems without losing important information.
+                        The resume should not be so lengthy, it should ideally be 1-2 pages long when converted to PDF. Focus on quality rather than quantity and make sure to include all the relevant information that can increase the candidate's chances of getting an interview call for the given job description.
+                    `
+
+    const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: zodToJsonSchema(resumePdfSchema),
+        }
+    })
+
+    const jsonContent = JSON.parse(response.text)
+    const pdfBuffer = await generatePdfFromHtml(jsonContent.html)
+    return pdfBuffer
+}
