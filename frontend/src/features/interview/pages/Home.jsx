@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import "../styles/home.scss"
 import { useInterview } from '../hooks/useInterview.js'
 import { useAuth } from '../../auth/hooks/useAuth'
@@ -9,6 +9,9 @@ const Home = () => {
     const { loading, generateReport,reports } = useInterview()
     const [ jobDescription, setJobDescription ] = useState("")
     const [ selfDescription, setSelfDescription ] = useState("")
+    const [ resumeFile, setResumeFile ] = useState(null)
+    const [ resumePreviewUrl, setResumePreviewUrl ] = useState("")
+    const [ errorMessage, setErrorMessage ] = useState("")
     const resumeInputRef = useRef()
 
     const navigate = useNavigate()
@@ -18,10 +21,69 @@ const onLogout = async () => {
     await handleLogout()
     navigate('/login')
 }
+
+    useEffect(() => {
+        if (!resumeFile) {
+            setResumePreviewUrl("")
+            return undefined
+        }
+
+        const objectUrl = URL.createObjectURL(resumeFile)
+        setResumePreviewUrl(objectUrl)
+
+        return () => {
+            URL.revokeObjectURL(objectUrl)
+        }
+    }, [ resumeFile ])
+
+    const handleResumeChange = (event) => {
+        const selectedFile = event.target.files?.[ 0 ] ?? null
+        setResumeFile(selectedFile)
+        setErrorMessage("")
+    }
+
+    const clearSelectedResume = () => {
+        setResumeFile(null)
+        setResumePreviewUrl("")
+        setErrorMessage("")
+
+        if (resumeInputRef.current) {
+            resumeInputRef.current.value = ""
+        }
+    }
+
     const handleGenerateReport = async () => {
-        const resumeFile = resumeInputRef.current.files[ 0 ]
-        const data = await generateReport({ jobDescription, selfDescription, resumeFile })
-        navigate(`/interview/${data._id}`)
+        const trimmedJobDescription = jobDescription.trim()
+        const trimmedSelfDescription = selfDescription.trim()
+
+        setErrorMessage("")
+
+        if (!trimmedJobDescription) {
+            setErrorMessage("Add the target job description before generating a report.")
+            return
+        }
+
+        if (!resumeFile && !trimmedSelfDescription) {
+            setErrorMessage("Upload a resume PDF or add a self description to continue.")
+            return
+        }
+
+        try {
+            const data = await generateReport({
+                jobDescription: trimmedJobDescription,
+                selfDescription: trimmedSelfDescription,
+                resumeFile
+            })
+
+            if (!data?._id) {
+                setErrorMessage("We could not generate your interview plan right now. Please try again.")
+                return
+            }
+
+            navigate(`/interview/${data._id}`)
+        } catch (error) {
+            setErrorMessage(error?.response?.data?.message || "We could not generate your interview plan right now. Please try again.")
+        }
     }
 
 if (loading) {
@@ -98,12 +160,15 @@ if (loading) {
                             <span className='badge badge--required'>Required</span>
                         </div>
                         <textarea
-                            onChange={(e) => { setJobDescription(e.target.value) }}
+                            onChange={(e) => {
+                                setJobDescription(e.target.value)
+                                setErrorMessage("")
+                            }}
                             className='panel__textarea'
                             placeholder={`Paste the full job description here...\ne.g. 'Senior Frontend Engineer at Google requires proficiency in React, TypeScript, and large-scale system design...'`}
                             maxLength={5000}
                         />
-                        <div className='char-counter'>0 / 5000 chars</div>
+                        <div className='char-counter'>{jobDescription.length} / 5000 chars</div>
                     </div>
 
                     {/* Vertical Divider */}
@@ -124,14 +189,28 @@ if (loading) {
                                 Upload Resume
                                 <span className='badge badge--best'>Best Results</span>
                             </label>
-                            <label className='dropzone' htmlFor='resume'>
+                            <label className={`dropzone ${resumeFile ? 'dropzone--filled' : ''}`} htmlFor='resume'>
                                 <span className='dropzone__icon'>
                                     <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 16 12 12 8 16" /><line x1="12" y1="12" x2="12" y2="21" /><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" /></svg>
                                 </span>
-                                <p className='dropzone__title'>Click to upload or drag &amp; drop</p>
-                                <p className='dropzone__subtitle'>PDF or DOCX (Max 5MB)</p>
-                                <input ref={resumeInputRef} hidden type='file' id='resume' name='resume' accept='.pdf,.docx' />
+                                <p className='dropzone__title'>{resumeFile ? 'Resume selected. Click to replace it.' : 'Click to upload your resume PDF'}</p>
+                                <p className='dropzone__subtitle'>PDF only (Max 5MB)</p>
+                                <input ref={resumeInputRef} hidden type='file' id='resume' name='resume' accept='.pdf,application/pdf' onChange={handleResumeChange} />
                             </label>
+                            {resumeFile && resumePreviewUrl && (
+                                <div className='resume-preview'>
+                                    <div className='resume-preview__header'>
+                                        <div>
+                                            <p className='resume-preview__name'>{resumeFile.name}</p>
+                                            <p className='resume-preview__meta'>{(resumeFile.size / (1024 * 1024)).toFixed(2)} MB | Preview ready</p>
+                                        </div>
+                                        <button type='button' className='resume-preview__clear' onClick={clearSelectedResume}>
+                                            Remove
+                                        </button>
+                                    </div>
+                                    <iframe className='resume-preview__frame' src={resumePreviewUrl} title='Resume preview' />
+                                </div>
+                            )}
                         </div>
 
                         {/* OR Divider */}
@@ -141,7 +220,10 @@ if (loading) {
                         <div className='self-description'>
                             <label className='section-label' htmlFor='selfDescription'>Quick Self-Description</label>
                             <textarea
-                                onChange={(e) => { setSelfDescription(e.target.value) }}
+                                onChange={(e) => {
+                                    setSelfDescription(e.target.value)
+                                    setErrorMessage("")
+                                }}
                                 id='selfDescription'
                                 name='selfDescription'
                                 className='panel__textarea panel__textarea--short'
@@ -156,6 +238,7 @@ if (loading) {
                             </span>
                             <p>Either a <strong>Resume</strong> or a <strong>Self Description</strong> is required to generate a personalized plan.</p>
                         </div>
+                        {errorMessage && <p className='form-error'>{errorMessage}</p>}
                     </div>
                 </div>
 

@@ -13,21 +13,31 @@ export const useInterview = () => {
         throw new Error("useInterview must be used within an InterviewProvider")
     }
 
-    const { loading, setLoading, report, setReport, reports, setReports } = context
+    const {
+        loading,
+        setLoading,
+        report,
+        setReport,
+        reports,
+        setReports,
+        downloadingResume,
+        setDownloadingResume,
+        downloadError,
+        setDownloadError
+    } = context
 
     const generateReport = async ({ jobDescription, selfDescription, resumeFile }) => {
         setLoading(true)
-        let response = null
         try {
-            response = await generateInterviewReport({ jobDescription, selfDescription, resumeFile })
+            const response = await generateInterviewReport({ jobDescription, selfDescription, resumeFile })
             setReport(response.interviewReport)
+            return response.interviewReport
         } catch (error) {
             console.log(error)
+            throw error
         } finally {
             setLoading(false)
         }
-
-        return response.interviewReport
     }
 
     const getReportById = async (interviewId) => {
@@ -60,21 +70,28 @@ export const useInterview = () => {
     }
 
     const getResumePdf = async (interviewReportId) => {
-        setLoading(true)
-        let response = null
+        setDownloadError("")
+        setDownloadingResume(true)
         try {
-            response = await generateResumePdf({ interviewReportId })
-            const url = window.URL.createObjectURL(new Blob([ response ], { type: "application/pdf" }))
+            const response = await generateResumePdf({ interviewReportId })
+            const pdfBlob = response instanceof Blob ? response : new Blob([ response ], { type: "application/pdf" })
+            const url = window.URL.createObjectURL(pdfBlob)
             const link = document.createElement("a")
             link.href = url
-            link.setAttribute("download", `resume_${interviewReportId}.pdf`)
+            link.download = `resume_${interviewReportId}.pdf`
+            link.style.display = "none"
             document.body.appendChild(link)
             link.click()
+            link.remove()
+            window.setTimeout(() => {
+                window.URL.revokeObjectURL(url)
+            }, 1000)
         }
         catch (error) {
             console.log(error)
+            setDownloadError(error?.message || "Unable to download the resume right now.")
         } finally {
-            setLoading(false)
+            setDownloadingResume(false)
         }
     }
 
@@ -86,6 +103,16 @@ export const useInterview = () => {
         }
     }, [ interviewId ])
 
-    return { loading, report, reports, generateReport, getReportById, getReports, getResumePdf }
+    return {
+        loading,
+        report,
+        reports,
+        downloadingResume,
+        downloadError,
+        generateReport,
+        getReportById,
+        getReports,
+        getResumePdf
+    }
 
 }
