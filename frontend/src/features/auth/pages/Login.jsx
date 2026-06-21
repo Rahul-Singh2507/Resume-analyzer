@@ -10,50 +10,71 @@ const navigate = useNavigate();
 
 const [email, setEmail] = useState("")
 const [password, setPassword] = useState("")
+const [error, setError] = useState("")
 const handleSubmit=async(e)=>{
 e.preventDefault()
-console.log("Email:", email)       // Add these to verify
-  console.log("Password:", password)// 🔥 ADD HERE
+setError("")
 
-await handleLogin({email,password})
-navigate('/')
+const result = await handleLogin({email,password})
+if(result.ok){
+  navigate('/dashboard')
+  return
+}
+
+setError(result.message)
 
 }
 if(loading){
-  return <main><h1>loading</h1></main>
+  return <main className="auth-page"><h1>loading</h1></main>
 }
   return (
-    <main>
-        <div className="form-container">
-  <h1>Login</h1>
+    <main className="auth-page">
+      <div className="auth-page__glow auth-page__glow--left" />
+      <div className="auth-page__glow auth-page__glow--right" />
 
-  <form onSubmit={handleSubmit}>
-    <div className="input-group">
-      <label htmlFor="email">Email</label>
-      <input onChange={(e)=>setEmail(e.target.value)}
-        type="email"
-        id="email"
-        name="email"
-        placeholder="Enter email address"
-      />
-    </div>
+      <div className="form-container">
+        <Link className="auth-brand" to="/">
+          <span className="auth-brand__mark">RA</span>
+          <span className="auth-brand__text">Resume Analyzer</span>
+        </Link>
 
-    <div className="input-group">
-      <label htmlFor="password">Password</label>
-      <input onChange={(e)=>setPassword(e.target.value)}
-        type="password"
-        id="password"
-        name="password"
-        placeholder="Enter password"
-      />
-    </div>
+        <span className="auth-eyebrow">Welcome back</span>
+        <h1>Log in to your interview workspace</h1>
+        <p className="auth-intro">Pick up your saved plans, create new strategies, and keep your prep focused on the role you want.</p>
 
-    <button className="button primary-button">
-      Login
-    </button>
-  </form>
-        <p>Don't have an account? <Link to={"/register"} >Register</Link> </p>
-</div>
+        <form onSubmit={handleSubmit}>
+          <div className="input-group">
+            <label htmlFor="email">Email</label>
+            <input onChange={(e)=>setEmail(e.target.value)}
+              type="email"
+              id="email"
+              name="email"
+              placeholder="Enter email address"
+            />
+          </div>
+
+          <div className="input-group">
+            <label htmlFor="password">Password</label>
+            <input onChange={(e)=>setPassword(e.target.value)}
+              type="password"
+              id="password"
+              name="password"
+              placeholder="Enter password"
+            />
+          </div>
+
+          {error ? <p className="auth-error">{error}</p> : null}
+
+          <button className="button primary-button">
+            Login
+          </button>
+        </form>
+
+        <div className="auth-links">
+          <p>Don't have an account? <Link to={"/register"} >Register</Link></p>
+          <p><Link to={"/"}>Back to home</Link></p>
+        </div>
+      </div>
     </main>
 )}
 

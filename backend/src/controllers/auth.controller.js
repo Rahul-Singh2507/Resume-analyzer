@@ -9,7 +9,7 @@ import tokenModel from "../models/blacklist.model.js";
     const {username ,email,password}=req.body
 
     if(!username||!email||!password){
-        res.status(401).json({
+        return res.status(401).json({
             message:"provide all the credential"
         })
     }
@@ -21,28 +21,19 @@ import tokenModel from "../models/blacklist.model.js";
     
     })
     if(isAlreadyExist){
-        res.status(400).json({
+        return res.status(400).json({
             message:"user already exist "
         })
     }
 
 const hash = await bcrypt.hash(password,10)
-const user = await userModel.create({
+await userModel.create({
     username ,
     email,
     password:hash
 })
 
-const token = jwt.sign({
-    id:user._id,username:user.username
-},config.JWT_SECRET,{expiresIn:"1d"})
-console.log(config.JWT_SECRET);
-res.cookie("token", token, {
-  httpOnly: true,
-  secure: false,        // keep false (you are on localhost)
-  sameSite: "lax"
-})
-res.status(201).json({
+return res.status(201).json({
     message:"user registered sucessfully"
 })
 
@@ -74,10 +65,10 @@ const token = jwt.sign({
 
 res.cookie("token", token, {
   httpOnly: true,
-  secure: false,        // keep false (you are on localhost)
+  secure: false,
   sameSite: "lax"
 })
-res.status(201).json({
+return res.status(200).json({
     message:"user login sucessfully",
     user:{
         id:user._id,
@@ -98,7 +89,7 @@ async function logoutUserController(req,res) {
         })
     }
     res.clearCookie("token")
-    res.status(200).json({
+    return res.status(200).json({
         message:"user logout sucessfully"
     })
 }
@@ -108,7 +99,7 @@ async function getMeController(req,res){
 
     const user = await userModel.findById(req.user.id)
 
-    res.status(201).json({
+    return res.status(200).json({
         message:"user fetched successfully",
         user:{
             id:user._id,

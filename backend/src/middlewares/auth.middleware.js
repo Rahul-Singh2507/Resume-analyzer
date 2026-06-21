@@ -1,4 +1,3 @@
-
 import jwt from "jsonwebtoken"
 import config from "../config/config.js"
 import tokenModel from "../models/blacklist.model.js"
@@ -19,7 +18,7 @@ import tokenModel from "../models/blacklist.model.js"
     }) 
 
     if(isTokenBlackListed){
-        res.status(400).json({
+        return res.status(400).json({
             message:"ivalid token"
         })
     }
@@ -28,10 +27,10 @@ try{
     const decoded = jwt.verify(token,config.JWT_SECRET)
 
     req.user = decoded
-    next()
+    return next()
 
 }catch(err){
-    res.status(401).json({
+    return res.status(401).json({
         message:"invalid token"
     })
 }

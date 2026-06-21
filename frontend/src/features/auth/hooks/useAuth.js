@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import {AuthContext} from "../auth.context.jsx"
-import {login,register,logout,getME} from "../services/auth.api.js"
+import {login,register,logout} from "../services/auth.api.js"
 
 
 export const useAuth =()=>{
@@ -11,53 +11,42 @@ export const useAuth =()=>{
 
 
 
-  // 🔐 LOGIN
   const handleLogin = async ({ email, password }) => {
     try {
       setLoading(true);
 
-     const data = await login({ email, password });;
+      const data = await login({ email, password });
 
       if (data?.user) {
         setUser(data.user);
-        return true; // success
+        return { ok: true };
       } else {
         setUser(null);
-        return false;
+        return { ok: false, message: "Unable to log in." };
       }
     } catch (err) {
-      console.log(err);
       setUser(null);
-      return false;
+      return { ok: false, message: err.message || "Unable to log in." };
     } finally {
       setLoading(false);
     }
   };
 
-  // 📝 REGISTER
   const handleRegister = async ({ username, email, password }) => {
     try {
       setLoading(true);
 
-      const data = await register({ username, email, password });;
-
-      if (data?.user) {
-        setUser(data.user);
-        return true;
-      } else {
-        setUser(null);
-        return false;
-      }
-    } catch (err) {
-      console.log(err);
+      await register({ username, email, password });
       setUser(null);
-      return false;
+      return { ok: true };
+    } catch (err) {
+      setUser(null);
+      return { ok: false, message: err.message || "Unable to register." };
     } finally {
       setLoading(false);
     }
   };
 
-  // 🚪 LOGOUT
   const handleLogout = async () => {
     try {
       setLoading(true);
@@ -65,10 +54,9 @@ export const useAuth =()=>{
       await logout();
       setUser(null);
 
-      return true;
+      return { ok: true };
     } catch (err) {
-      console.log(err);
-      return false;
+      return { ok: false, message: err.message || "Unable to log out." };
     } finally {
       setLoading(false);
     }

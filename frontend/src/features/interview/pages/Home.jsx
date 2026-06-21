@@ -19,7 +19,7 @@ const { handleLogout } = useAuth()
 
 const onLogout = async () => {
     await handleLogout()
-    navigate('/login')
+    navigate('/')
 }
 
     useEffect(() => {
@@ -97,7 +97,6 @@ if (loading) {
             <div className='interview-card'>
                 <div className='interview-card__body'>
 
-                    {/* Left Panel Skeleton */}
                     <div className='panel panel--left'>
                         <div className='skeleton skeleton--text' style={{ width: '160px', height: '20px', marginBottom: '1rem' }} />
                         <div className='skeleton' style={{ width: '100%', height: '320px', borderRadius: '10px' }} />
@@ -105,7 +104,6 @@ if (loading) {
 
                     <div className='panel-divider' />
 
-                    {/* Right Panel Skeleton */}
                     <div className='panel panel--right'>
                         <div className='skeleton skeleton--text' style={{ width: '120px', height: '20px', marginBottom: '1rem' }} />
                         <div className='skeleton' style={{ width: '100%', height: '130px', borderRadius: '10px', marginBottom: '1rem' }} />
@@ -127,30 +125,25 @@ if (loading) {
 
     return (
         <div className='home-page'>
-
-            {/* Page Header */}
-    <header className='page-header'>
-    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
-        <button onClick={onLogout} className='button' style={{
-            background: 'transparent',
-            border: '1px solid #2a3042',
-            color: '#8892a4',
-            padding: '0.5rem 1.2rem',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '0.85rem',
-        }}>
-            Logout
-        </button>
-    </div>
-    <h1>Create Your Custom <span className='highlight'>Interview Plan</span></h1>
-    <p>Let our AI analyze the job requirements and your unique profile to build a winning strategy.</p>
-</header>
-            {/* Main Card */}
+            <header className='page-header'>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+                <button onClick={onLogout} className='button' style={{
+                    background: 'transparent',
+                    border: '1px solid #2a3042',
+                    color: '#8892a4',
+                    padding: '0.5rem 1.2rem',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                }}>
+                    Logout
+                </button>
+            </div>
+            <h1>Create Your Custom <span className='highlight'>Interview Plan</span></h1>
+            <p>Let our AI analyze the job requirements and your unique profile to build a winning strategy.</p>
+        </header>
             <div className='interview-card'>
                 <div className='interview-card__body'>
-
-                    {/* Left Panel - Job Description */}
                     <div className='panel panel--left'>
                         <div className='panel__header'>
                             <span className='panel__icon'>
@@ -171,10 +164,8 @@ if (loading) {
                         <div className='char-counter'>{jobDescription.length} / 5000 chars</div>
                     </div>
 
-                    {/* Vertical Divider */}
                     <div className='panel-divider' />
 
-                    {/* Right Panel - Profile */}
                     <div className='panel panel--right'>
                         <div className='panel__header'>
                             <span className='panel__icon'>
@@ -183,7 +174,6 @@ if (loading) {
                             <h2>Your Profile</h2>
                         </div>
 
-                        {/* Upload Resume */}
                         <div className='upload-section'>
                             <label className='section-label'>
                                 Upload Resume
@@ -213,10 +203,8 @@ if (loading) {
                             )}
                         </div>
 
-                        {/* OR Divider */}
                         <div className='or-divider'><span>OR</span></div>
 
-                        {/* Quick Self-Description */}
                         <div className='self-description'>
                             <label className='section-label' htmlFor='selfDescription'>Quick Self-Description</label>
                             <textarea
@@ -231,7 +219,6 @@ if (loading) {
                             />
                         </div>
 
-                        {/* Info Box */}
                         <div className='info-box'>
                             <span className='info-box__icon'>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" stroke="#1a1f27" strokeWidth="2" /><line x1="12" y1="16" x2="12.01" y2="16" stroke="#1a1f27" strokeWidth="2" /></svg>
@@ -242,7 +229,6 @@ if (loading) {
                     </div>
                 </div>
 
-                {/* Card Footer */}
                 <div className='interview-card__footer'>
                     <span className='footer-info'>AI-Powered Strategy Generation &bull; Approx 30s</span>
                     <button
@@ -254,7 +240,6 @@ if (loading) {
                 </div>
             </div>
 
-            {/* Recent Reports List */}
             {reports.length > 0 && (
                 <section className='recent-reports'>
                     <h2>My Recent Interview Plans</h2>
@@ -270,7 +255,6 @@ if (loading) {
                 </section>
             )}
 
-            {/* Page Footer */}
             <footer className='page-footer'>
                 <a href='#'>Privacy Policy</a>
                 <a href='#'>Terms of Service</a>
