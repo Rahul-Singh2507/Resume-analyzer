@@ -9,7 +9,7 @@ const steps = [
         description: "Paste a real job description and we pull out the skills, expectations, and likely interview themes."
     },
     {
-        title: "Add your story",
+        title: "Add your storys",
         description: "Upload your resume or type a short profile so the plan matches your background instead of generic advice."
     },
     {
