@@ -22,7 +22,7 @@ import tokenModel from "../models/blacklist.model.js";
     })
     if(isAlreadyExist){
         return res.status(400).json({
-            message:"user already exist "
+            message:"user already exists "
         })
     }
 
